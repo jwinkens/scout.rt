@@ -40,6 +40,8 @@ export class Widget extends PropertyEventEmitter implements WidgetModel, ObjectW
    * also considers the enabled-states of the parent widgets.
    */
   enabledComputed: boolean;
+  enabledInternal: boolean;
+  enabledGranted: boolean;
   eventDelegators: EventDelegatorForCloning[];
   focused: boolean;
   /**
@@ -83,7 +85,6 @@ export class Widget extends PropertyEventEmitter implements WidgetModel, ObjectW
    * @internal
    */
   _rendered: boolean;
-
   protected _$lastFocusedElement: JQuery;
   protected _focusInListener: (event: FocusEvent | JQuery.FocusInEvent) => void;
   protected _glassPaneContributions: GlassPaneContribution[];
@@ -118,6 +119,8 @@ export class Widget extends PropertyEventEmitter implements WidgetModel, ObjectW
     this.destroying = false;
     this.enabled = true;
     this.enabledComputed = true;
+    this.enabledInternal = true;
+    this.enabledGranted = true;
     this.inheritAccessibility = true;
     this.disabledStyle = Widget.DisabledStyle.DEFAULT;
     this.visible = true;
@@ -226,7 +229,7 @@ export class Widget extends PropertyEventEmitter implements WidgetModel, ObjectW
 
     this._setCssClass(this.cssClass);
     this._setLogicalGrid(this.logicalGrid);
-    this._setEnabled(this.enabled);
+    this._setEnabled(this.computeEnabled());
   }
 
   /**
@@ -234,7 +237,11 @@ export class Widget extends PropertyEventEmitter implements WidgetModel, ObjectW
    * For instance, you could not simply set the property value, but extend an already existing value.
    */
   protected _initProperty(propertyName: string, value: any) {
-    this._writeProperty(propertyName, value);
+    if (propertyName === 'enabled') {
+      this._writeProperty('enabledInternal', value);
+    } else {
+      this._writeProperty(propertyName, value);
+    }
   }
 
   /**
@@ -829,29 +836,13 @@ export class Widget extends PropertyEventEmitter implements WidgetModel, ObjectW
   }
 
   /**
-   * Changes the enabled property of this form field to the given value.
+   * Changes the enabled property of this widget to the given value.
    *
-   * @param enabled
-   *          Required. The new enabled value
-   * @param updateParents
-   *          If true, the enabled property of all parent form fields are
-   *          updated to same value as well. Default is false.
-   * @param updateChildren
-   *          If true, the enabled property of all child form fields (recursive)
-   *          are updated to same value as well. Default is false.
+   * @param enabled the new enabled value
    */
-  setEnabled(enabled: boolean, updateParents?: boolean, updateChildren?: boolean) {
-    this.setProperty('enabled', enabled);
-
-    if (enabled && updateParents && this.parent) {
-      this.parent.setEnabled(true, true, false);
-    }
-
-    if (updateChildren) {
-      this.visitChildren(widget => {
-        widget.setEnabled(enabled);
-      });
-    }
+  setEnabled(enabled: boolean) {
+    this.setProperty('enabledInternal', enabled);
+    this.setProperty('enabled', this.computeEnabled());
   }
 
   protected _setEnabled(enabled: boolean) {
@@ -860,6 +851,31 @@ export class Widget extends PropertyEventEmitter implements WidgetModel, ObjectW
       this.recomputeEnabled();
     }
   }
+
+  // /**
+  //  * @returns the computed result of every enabled dimension.
+  //  */
+  // get enabled(): boolean {
+  //   return this.enabledInternal && this.enabledGranted;
+  //   // return Object.values(this._enabledDimensions).every(enabled => enabled);
+  // }
+
+  protected computeEnabled(): boolean {
+    return this.enabledInternal && this.enabledGranted;
+  }
+
+  setEnabledGranted(enabledGranted: boolean) {
+    this.setProperty('enabledGranted', enabledGranted);
+    this.setProperty('enabled', this.computeEnabled());
+  }
+
+  // get enabledGranted(): boolean {
+  //   return this.isEnabled('granted');
+  // }
+
+  // isEnabled(dimension: string) {
+  //   return this._enabledDimensions[dimension];
+  // }
 
   recomputeEnabled(parentEnabled?: boolean) {
     if (parentEnabled === undefined) {

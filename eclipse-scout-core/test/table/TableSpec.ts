@@ -1879,6 +1879,67 @@ describe('Table', () => {
     });
   });
 
+  describe('row menus', () => {
+    it('are disabled if row is disabled', () => {
+      let model = helper.createModelFixture(2, 2);
+      let table = helper.createTable(model);
+      let singleSelMenu = scout.create(Menu, {
+        parent: table,
+        menuTypes: [Table.MenuTypes.SingleSelection]
+      });
+      let multiSelMenu = scout.create(Menu, {
+        parent: table,
+        menuTypes: [Table.MenuTypes.MultiSelection]
+      });
+      let emptySpaceMenu = scout.create(Menu, {
+        parent: table
+      });
+
+      table.setMenus([singleSelMenu, multiSelMenu, emptySpaceMenu]);
+      let row = table.rows[0];
+      table.selectRow(row);
+      expect(singleSelMenu.enabled).toBe(true);
+      expect(multiSelMenu.enabled).toBe(true);
+      expect(emptySpaceMenu.enabled).toBe(true);
+
+      row.setEnabled(false);
+      table.updateRows(row);
+      expect(singleSelMenu.enabled).toBe(false);
+      expect(multiSelMenu.enabled).toBe(true);
+      expect(emptySpaceMenu.enabled).toBe(true);
+
+      table.selectRows([table.rows[0], table.rows[1]]);
+      expect(multiSelMenu.enabled).toBe(false);
+      expect(emptySpaceMenu.enabled).toBe(true);
+    });
+
+    it('stay disabled if menu is disabled but row enabled', () => {
+      let model = helper.createModelFixture(2, 2);
+      let table = helper.createTable(model);
+      let singleSelMenu = scout.create(Menu, {
+        parent: table,
+        menuTypes: [Table.MenuTypes.SingleSelection]
+      });
+
+      table.setMenus([singleSelMenu]);
+      let row = table.rows[0];
+      table.selectRow(row);
+      expect(singleSelMenu.enabled).toBe(true);
+
+      row.setEnabled(false);
+      table.updateRows(row);
+      expect(singleSelMenu.enabled).toBe(false);
+
+      singleSelMenu.setEnabled(false);
+      expect(singleSelMenu.enabled).toBe(false);
+
+      row.setEnabled(true);
+      table.updateRows(row);
+      expect(row.enabled).toBe(true);
+      expect(singleSelMenu.enabled).toBe(false); // Still false
+    });
+  });
+
   describe('menu bar popup ', () => {
     let menuBarMenu, singleSelMenu, singleMultiSelMenu, multiSelMenu, emptySpaceMenu, table;
 

@@ -50,6 +50,14 @@ export interface WidgetModel extends ObjectModel<Widget> {
    */
   enabled?: boolean;
   /**
+   * Defines whether the widget is allowed to be enabled.
+   *
+   * If a enabledGranted is false, the widget will always be disabled even if {@link enabled} is set to true.
+   *
+   * Default is true.
+   */
+  enabledGranted?: boolean;
+  /**
    * If enabled, the widget keeps track of the active element inside the container,
    * so that it can restore the focus using {@link Widget.restoreFocus} whenever the widget is rendered or attached again.
    *

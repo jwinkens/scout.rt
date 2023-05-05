@@ -452,30 +452,9 @@ describe('Widget', () => {
       expect(widget.parent.enabledComputed).toBe(true);
 
       // check change on widget itself
-      widget.setEnabled(false, false, false);
+      widget.setEnabled(false);
       expect(widget.enabled).toBe(false);
       expect(widget.enabledComputed).toBe(false);
-      expect(widget.parent.enabled).toBe(true);
-      expect(widget.parent.enabledComputed).toBe(true);
-
-      // check that child-propagation works and resets the enabled state
-      widget.parent.setEnabled(true, false, true);
-      expect(widget.enabled).toBe(true);
-      expect(widget.enabledComputed).toBe(true);
-      expect(widget.parent.enabled).toBe(true);
-      expect(widget.parent.enabledComputed).toBe(true);
-
-      // check that inheritance works
-      widget.parent.setEnabled(false, false, false);
-      expect(widget.enabled).toBe(true);
-      expect(widget.enabledComputed).toBe(false);
-      expect(widget.parent.enabled).toBe(false);
-      expect(widget.parent.enabledComputed).toBe(false);
-
-      // check that parent-propagation works
-      widget.setEnabled(true, true, false);
-      expect(widget.enabled).toBe(true);
-      expect(widget.enabledComputed).toBe(true);
       expect(widget.parent.enabled).toBe(true);
       expect(widget.parent.enabledComputed).toBe(true);
     });
@@ -494,7 +473,7 @@ describe('Widget', () => {
       expect(widget.parent.enabledComputed).toBe(true);
 
       // change enabled of parent and verify that it has no effect on child because inheritance is disabled.
-      widget.parent.setEnabled(false, false, false);
+      widget.parent.setEnabled(false);
       expect(widget.enabled).toBe(true);
       expect(widget.enabledComputed).toBe(true);
       expect(widget.parent.enabled).toBe(false);
@@ -545,7 +524,7 @@ describe('Widget', () => {
         parent: parent
       });
       // check setup
-      parent.setEnabled(false, false, false);
+      parent.setEnabled(false);
       expect(widget.enabled).toBe(true);
       expect(widget.enabledComputed).toBe(false);
       expect(widget.parent.enabled).toBe(false);
@@ -564,6 +543,103 @@ describe('Widget', () => {
       // check that the new widget is disabled now
       expect(additionalWidget.enabled).toBe(true);
       expect(additionalWidget.enabledComputed).toBe(false);
+    });
+
+    it('always returns false if enabledGranted is false', () => {
+      let widget = createWidget({
+        parent: parent
+      });
+      expect(widget.enabled).toBe(true);
+      expect(widget.enabledComputed).toBe(true);
+      expect(widget.enabledGranted).toBe(true);
+      expect(widget.enabledInternal).toBe(true);
+      // expect(widget.getProperty('enabled')).toBe(true);
+
+      widget.setEnabledGranted(false);
+      expect(widget.enabled).toBe(false);
+      expect(widget.enabledComputed).toBe(false);
+      expect(widget.enabledGranted).toBe(false);
+      expect(widget.enabledInternal).toBe(true);
+      // expect(widget.getProperty('enabled')).toBe(true);
+
+      let widget2 = createWidget({
+        parent: parent,
+        enabled: false,
+        enabledGranted: false
+      });
+      expect(widget2.enabled).toBe(false);
+      expect(widget2.enabledComputed).toBe(false);
+      expect(widget2.enabledGranted).toBe(false);
+      expect(widget2.enabledInternal).toBe(false);
+      // expect(widget2.getProperty('enabled')).toBe(true);
+
+      widget2.setEnabled(true);
+      expect(widget2.enabled).toBe(false);
+      expect(widget2.enabledComputed).toBe(false);
+      expect(widget2.enabledGranted).toBe(false);
+      expect(widget2.enabledInternal).toBe(true);
+      // expect(widget2.getProperty('enabled')).toBe(true);
+    });
+
+    it('triggers property changes for every enabled dimension', () => {
+      let widget = createWidget({
+        parent: parent
+      });
+      expect(widget.enabled).toBe(true);
+      expect(widget.enabledGranted).toBe(true);
+      expect(widget.enabledInternal).toBe(true);
+
+      let enabledEvent;
+      widget.on('propertyChange:enabled', event => {
+        enabledEvent = event;
+      });
+      let enabledInternalEvent;
+      widget.on('propertyChange:enabledInternal', event => {
+        enabledInternalEvent = event;
+      });
+      let enabledGrantedEvent;
+      widget.on('propertyChange:enabledGranted', event => {
+        enabledGrantedEvent = event;
+      });
+      widget.setEnabledGranted(false);
+      expect(widget.enabled).toBe(false);
+      expect(widget.enabledGranted).toBe(false);
+      expect(widget.enabledInternal).toBe(true);
+      expect(enabledEvent.newValue).toBe(false);
+      expect(enabledGrantedEvent.newValue).toBe(false);
+      expect(enabledInternalEvent).toBe(undefined);
+
+      enabledEvent = null;
+      enabledGrantedEvent = null;
+      widget.setEnabled(false);
+      expect(widget.enabled).toBe(false);
+      expect(widget.enabledGranted).toBe(false);
+      expect(widget.enabledInternal).toBe(false);
+      expect(enabledEvent).toBe(null);
+      expect(enabledGrantedEvent).toBe(null);
+      expect(enabledInternalEvent.newValue).toBe(false);
+
+      enabledInternalEvent = null;
+      enabledEvent = null;
+      enabledGrantedEvent = null;
+      widget.setEnabledGranted(true);
+      expect(widget.enabled).toBe(false);
+      expect(widget.enabledGranted).toBe(true);
+      expect(widget.enabledInternal).toBe(false);
+      expect(enabledEvent).toBe(null);
+      expect(enabledGrantedEvent.newValue).toBe(true);
+      expect(enabledInternalEvent).toBe(null);
+
+      enabledInternalEvent = null;
+      enabledEvent = null;
+      enabledGrantedEvent = null;
+      widget.setEnabled(true);
+      expect(widget.enabled).toBe(true);
+      expect(widget.enabledGranted).toBe(true);
+      expect(widget.enabledInternal).toBe(true);
+      expect(enabledEvent.newValue).toBe(true);
+      expect(enabledGrantedEvent).toBe(null);
+      expect(enabledInternalEvent.newValue).toBe(true);
     });
   });
 

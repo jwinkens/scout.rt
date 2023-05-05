@@ -4664,7 +4664,15 @@ export class Table extends Widget implements TableModel {
     this.$container.toggleClass('has-menubar', this.menuBar && this.menuBar.visible);
     this.$container.toggleClass('menubar-top', this.menuBar && this.menuBar.position === MenuBar.Position.TOP);
     this.$container.toggleClass('menubar-bottom', this.menuBar && this.menuBar.position !== MenuBar.Position.TOP);
+  }
 
+  protected _updateMenusEnabled() {
+    for (const row of this.selectedRows) {
+      for (const menu of this.menus) {
+        // if menu visible? or check single/multi selection? or apply filter?
+        menu.setEnabledSlave(row.enabled);
+      }
+    }
   }
 
   protected _setKeyStrokes(keyStrokes: Action[]) {

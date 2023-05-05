@@ -218,25 +218,6 @@ describe('GroupBox', () => {
       expectEnabled(groupBoxWithTwoChildren.getFields()[0], true, false, 'disabled');
       expectEnabled(groupBoxWithTwoChildren.getFields()[1], true, false, 'disabled');
     });
-
-    it('but maybe propagated to children if required', () => {
-      let groupBoxWithTwoChildren = helper.createGroupBoxWithFields(session.desktop, 2);
-      groupBoxWithTwoChildren.render();
-
-      expectEnabled(groupBoxWithTwoChildren, true, true);
-      expectEnabled(groupBoxWithTwoChildren.getFields()[0], true, true);
-      expectEnabled(groupBoxWithTwoChildren.getFields()[1], true, true);
-
-      groupBoxWithTwoChildren.setEnabled(false, true, true);
-      expectEnabled(groupBoxWithTwoChildren, false, false, 'disabled');
-      expectEnabled(groupBoxWithTwoChildren.getFields()[0], false, false, 'disabled');
-      expectEnabled(groupBoxWithTwoChildren.getFields()[1], false, false, 'disabled');
-
-      groupBoxWithTwoChildren.getFields()[0].setEnabled(true, true, true);
-      expectEnabled(groupBoxWithTwoChildren, true, true);
-      expectEnabled(groupBoxWithTwoChildren.getFields()[0], true, true);
-      expectEnabled(groupBoxWithTwoChildren.getFields()[1], false, false);
-    });
   });
 
   describe('logical grid', () => {
