@@ -126,6 +126,7 @@ export class Page extends TreeNode implements PageModel {
   }
 
   protected override _destroy() {
+    this.trigger('destroying');
     super._destroy();
     if (this.detailTable) {
       this.detailTable.destroy();
@@ -133,6 +134,7 @@ export class Page extends TreeNode implements PageModel {
     if (this.detailForm) {
       this.detailForm.destroy();
     }
+    this.trigger('destroy');
   }
 
   protected _internalInitTable() {

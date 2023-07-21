@@ -156,6 +156,7 @@ export class Outline extends Tree implements DisplayParent, OutlineModel {
     this._setSelectedViewTabs(this.selectedViewTabs);
     this._setMenus(this.menus);
     this.updateDetailContent();
+    this._nodesSelectedInternal([]);
   }
 
   /**
@@ -174,7 +175,9 @@ export class Outline extends Tree implements DisplayParent, OutlineModel {
     nodeModel = nodeModel || {};
     nodeModel.objectType = scout.nvl(nodeModel.objectType, Page);
     nodeModel.parent = this;
-    return scout.create(nodeModel as FullModelOf<Page>);
+    let page = scout.create(nodeModel as FullModelOf<Page>);
+    page.on('propertyChange:detailForm propertyChange:detailTable', e => this.pageChanged(page));
+    return page;
   }
 
   protected override _createKeyStrokeContext(): KeyStrokeContext {

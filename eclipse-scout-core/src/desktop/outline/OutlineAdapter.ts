@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-import {App, EventHandler, Form, objects, Outline, Page, RemoteEvent, scout, Table, TableAdapter, TableFilterRemovedEvent, TableRow, TableRowInitEvent, TableRowsInsertedEvent, TreeAdapter} from '../../index';
+import {App, EventHandler, Form, objects, Outline, Page, RemoteEvent, scout, Table, TableAdapter, TableFilterRemovedEvent, TableRow, TableRowInitEvent, TableRowsInsertedEvent, Tree, TreeAdapter, TreeNodeModel} from '../../index';
 
 export class OutlineAdapter extends TreeAdapter {
   declare widget: Outline;
@@ -241,16 +241,41 @@ export class OutlineAdapter extends TreeAdapter {
     this.modelAdapter._linkNodeWithRowLater(page);
   }
 
-  protected static _updateParentTablePageMenusForDetailForm(this: Page & { _updateParentTablePageMenusForDetailFormOrig }) {
+  protected static override _createTreeNodeRemote(this: Tree & { modelAdapter: TreeAdapter; _createTreeNodeOrig }, nodeModel: TreeNodeModel) {
+    if (this.modelAdapter) {
+      nodeModel = (this.modelAdapter as OutlineAdapter)._initNodeModel(nodeModel);
+    }
+    if (nodeModel?.nodeType === 'jsPage') {
+      if (!nodeModel.jsPageObjectType?.length) {
+        throw new Error('jsPageObjectType not set');
+      }
+
+      let jsPageModel = {
+        id: nodeModel.id,
+        parent: nodeModel.parent,
+        owner: nodeModel.owner,
+        objectType: nodeModel.jsPageObjectType
+      };
+
+      if (nodeModel.jsPageModel) {
+        jsPageModel = $.extend(true, {}, nodeModel.jsPageModel, jsPageModel);
+      }
+
+      nodeModel = jsPageModel;
+    }
+    return this._createTreeNodeOrig(nodeModel);
+  }
+
+  protected static _updateParentTablePageMenusForDetailForm(this: Page & { _updateParentTablePageMenusForDetailFormOrig; remote?: true }) {
     const detailForm = this.detailForm;
-    if (detailForm && !detailForm.modelAdapter) {
+    if (detailForm && (!detailForm.modelAdapter || !this.remote)) {
       this._updateParentTablePageMenusForDetailFormOrig();
     }
   }
 
-  protected static _updateParentTablePageMenusForDetailTable(this: Page & { _updateParentTablePageMenusForDetailTableOrig }) {
+  protected static _updateParentTablePageMenusForDetailTable(this: Page & { _updateParentTablePageMenusForDetailTableOrig; remote?: true }) {
     const detailTable = this.detailTable;
-    if (detailTable && !detailTable.modelAdapter) {
+    if (detailTable && (!detailTable.modelAdapter || !this.remote)) {
       this._updateParentTablePageMenusForDetailTableOrig();
     }
   }
