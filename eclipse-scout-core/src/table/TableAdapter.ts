@@ -642,6 +642,15 @@ export class TableAdapter extends ModelAdapter {
     return this._createRowOrig(rowModel);
   }
 
+  static replaceRows(this: Table & { modelAdapter: TableAdapter; replaceRowsOrig }, rows: ObjectOrModel<TableRow> | ObjectOrModel<TableRow>[]) {
+    if (this.modelAdapter) {
+      this.deleteAllRows();
+      this.insertRows(rows);
+      return;
+    }
+    this.replaceRowsOrig(rows);
+  }
+
   /**
    * Static method to modify the prototype of Table.
    */
@@ -651,6 +660,7 @@ export class TableAdapter extends ModelAdapter {
     }
 
     objects.replacePrototypeFunction(Table, '_createRow', TableAdapter._createRowRemote, true);
+    objects.replacePrototypeFunction(Table, 'replaceRows', TableAdapter.replaceRows, true);
 
     // _sortWhileInit
     objects.replacePrototypeFunction(Table, '_sortWhileInit', function(this: Table & { _sortWhileInitOrig }) {

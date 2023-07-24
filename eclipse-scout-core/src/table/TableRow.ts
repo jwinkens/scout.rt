@@ -123,4 +123,15 @@ export class TableRow implements TableRowModel, ObjectWithType {
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
   }
+
+  getKeyValues(): any[] {
+    if (!this.cells?.length) {
+      return [];
+    }
+    let columns = this.getTable().columns.filter(column => column.primaryKey);
+    if (!columns.length) {
+      columns = this.getTable().columns;
+    }
+    return columns.map(column => this.getTable().cellValue(column, this));
+  }
 }

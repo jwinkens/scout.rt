@@ -2885,6 +2885,13 @@ export class Table extends Widget implements TableModel {
     this._sort();
   }
 
+  replaceRows(rows: ObjectOrModel<TableRow> | ObjectOrModel<TableRow>[]) {
+    const selectedKeys = this.getSelectedKeys();
+    this.deleteAllRows();
+    this.insertRows(rows);
+    this.restoreSelection(selectedKeys);
+  }
+
   deleteRow(row: TableRow) {
     this.deleteRows([row]);
   }
@@ -3524,6 +3531,37 @@ export class Table extends Widget implements TableModel {
 
   isRowSelected(row: TableRow): boolean {
     return this.selectedRows.indexOf(row) > -1;
+  }
+
+  restoreSelection(selectedKeys: any[][]) {
+    if (!selectedKeys?.length) {
+      return;
+    }
+    selectedKeys = [...selectedKeys];
+    const selectedRows = [];
+    for (const row of this.rows) {
+      let index = -1;
+      try {
+        index = selectedKeys.findIndex(key => objects.equalsRecursive(key, row.getKeyValues()));
+      } catch (e) {
+        $.log.warn('Unable to restore selection.', e);
+      }
+      if (index !== -1) {
+        selectedKeys.splice(index, 1);
+        selectedRows.push(row);
+        if (!selectedKeys.length) {
+          break;
+        }
+      }
+    }
+    this.selectRows(selectedRows);
+  }
+
+  getSelectedKeys(): any[][] {
+    if (!this.selectedRows?.length) {
+      return [];
+    }
+    return this.selectedRows.map(row => row.getKeyValues());
   }
 
   filterCount(): number {
@@ -5588,7 +5626,7 @@ export class Table extends Widget implements TableModel {
    * @param includeCompacted true to also include the columns that are invisible because they are compacted. Default is false which means compacted columns are not returned.
    */
   visibleColumns(includeGuiColumns?: boolean, includeCompacted?: boolean): Column<any>[] {
-    return this.filterColumns(column => scout.nvl(includeCompacted, false) ? column.visibleIgnoreCompacted: column.visible, includeGuiColumns);
+    return this.filterColumns(column => scout.nvl(includeCompacted, false) ? column.visibleIgnoreCompacted : column.visible, includeGuiColumns);
   }
 
   /**
