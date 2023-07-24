@@ -100,6 +100,34 @@ describe('Outline', () => {
       expect(tree._onNodeDeleted.calls.count()).toBe(13);
     });
 
+    it('selects parent node of deleted node if it was selected', () => {
+      const node0 = tree.nodes[0];
+      const node00 = node0.childNodes[0];
+      const node01 = node0.childNodes[1];
+      const node1 = tree.nodes[1];
+      const node10 = node1.childNodes[0];
+      const node11 = node1.childNodes[1];
+
+      expect(tree.selectedNode()).toBeNull();
+
+      tree.deleteNode(node00);
+      expect(tree.selectedNode()).toBeNull();
+
+      tree.selectNodes(node01);
+      expect(tree.selectedNode()).toBe(node01);
+
+      tree.deleteNode(node01);
+      expect(tree.selectedNode()).toBe(node0);
+
+      tree.selectNodes(node11);
+      expect(tree.selectedNode()).toBe(node11);
+
+      tree.deleteNode(node10);
+      expect(tree.selectedNode()).toBe(node11);
+
+      tree.deleteNode(node11);
+      expect(tree.selectedNode()).toBe(node1);
+    });
   });
 
   describe('deleteAllChildNodes', () => {

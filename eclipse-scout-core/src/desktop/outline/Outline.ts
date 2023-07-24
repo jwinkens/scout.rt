@@ -431,6 +431,14 @@ export class Outline extends Tree implements DisplayParent, OutlineModel {
       node.detailTable.destroy();
       node.detailTable = null;
     }
+    this._updateSelectedNodeOnNodeDeleted(node);
+  }
+
+  protected _updateSelectedNodeOnNodeDeleted(page: Page) {
+    if (!page || this.selectedNode() !== page) {
+      return;
+    }
+    this.selectNode(page.parentNode);
   }
 
   override selectNodes(nodes: Page | Page[], debounceSend?: boolean) {

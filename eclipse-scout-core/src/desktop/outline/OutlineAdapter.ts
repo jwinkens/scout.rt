@@ -163,6 +163,7 @@ export class OutlineAdapter extends TreeAdapter {
     objects.replacePrototypeFunction(Outline, 'updateDetailMenus', OutlineAdapter.updateDetailMenusRemote, true);
     objects.replacePrototypeFunction(Outline, '_initTreeNodeInternal', OutlineAdapter._initTreeNodeInternalRemote, true);
     objects.replacePrototypeFunction(Outline, '_createTreeNode', OutlineAdapter._createTreeNodeRemote, true);
+    objects.replacePrototypeFunction(Outline, '_updateSelectedNodeOnNodeDeleted', OutlineAdapter._updateSelectedNodeOnNodeDeleted, true);
     objects.replacePrototypeFunction(Page, '_updateParentTablePageMenusForDetailForm', OutlineAdapter._updateParentTablePageMenusForDetailForm, true);
     objects.replacePrototypeFunction(Page, '_updateParentTablePageMenusForDetailTable', OutlineAdapter._updateParentTablePageMenusForDetailTable, true);
     objects.replacePrototypeFunction(Page, 'linkWithRow', OutlineAdapter.linkWithRow, true);
@@ -264,6 +265,13 @@ export class OutlineAdapter extends TreeAdapter {
       nodeModel = jsPageModel;
     }
     return this._createTreeNodeOrig(nodeModel);
+  }
+
+  protected static _updateSelectedNodeOnNodeDeleted(this: Outline & { _updateSelectedNodeOnNodeDeletedOrig }, page: Page & { remote?: true }) {
+    if (page.remote) {
+      return;
+    }
+    this._updateSelectedNodeOnNodeDeletedOrig(page);
   }
 
   protected static _updateParentTablePageMenusForDetailForm(this: Page & { _updateParentTablePageMenusForDetailFormOrig; remote?: true }) {
