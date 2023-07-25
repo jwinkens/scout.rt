@@ -36,6 +36,8 @@ public class ScoutDataObjectModuleContext {
 
   protected static final String CONTRIBUTIONS_ATTRIBUTE_NAME_KEY = "contributionsAttributeNameKey";
 
+  protected static final String LENIENT_DESERIALIZATION_KEY = "lenientDeserializationKey";
+
   protected LazyValue<DoEntitySerializerAttributeNameComparator> m_comparator = new LazyValue<>(() -> BEANS.get(DoEntitySerializerAttributeNameComparator.class).init(this));
 
   protected final Map<String, Object> m_contextMap = new HashMap<>();
@@ -108,6 +110,15 @@ public class ScoutDataObjectModuleContext {
 
   public ScoutDataObjectModuleContext withContributionsAttributeName(String contributionsAttributeName) {
     put(CONTRIBUTIONS_ATTRIBUTE_NAME_KEY, contributionsAttributeName);
+    return this;
+  }
+
+  public boolean isLenientDeserialization() {
+    return BooleanUtility.nvl(get(LENIENT_DESERIALIZATION_KEY, Boolean.class));
+  }
+
+  public ScoutDataObjectModuleContext withLenientDeserialization(boolean lenientDeserialization) {
+    put(LENIENT_DESERIALIZATION_KEY, true);
     return this;
   }
 }

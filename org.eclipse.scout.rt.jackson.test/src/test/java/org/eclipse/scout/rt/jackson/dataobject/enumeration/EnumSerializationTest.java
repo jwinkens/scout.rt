@@ -16,6 +16,7 @@ import java.util.Collections;
 
 import org.eclipse.scout.rt.dataobject.DoNode;
 import org.eclipse.scout.rt.dataobject.IDataObjectMapper;
+import org.eclipse.scout.rt.dataobject.ILenientDataObjectMapper;
 import org.eclipse.scout.rt.dataobject.IPrettyPrintDataObjectMapper;
 import org.eclipse.scout.rt.dataobject.fixture.FixtureEnum;
 import org.eclipse.scout.rt.jackson.dataobject.fixture.TestEntityWithEnumDo;
@@ -23,7 +24,6 @@ import org.eclipse.scout.rt.jackson.dataobject.fixture.TestEntityWithEnumMapKeyD
 import org.eclipse.scout.rt.jackson.testing.DataObjectSerializationTestHelper;
 import org.eclipse.scout.rt.platform.BEANS;
 import org.eclipse.scout.rt.platform.exception.PlatformException;
-import org.eclipse.scout.rt.platform.util.Assertions.AssertionException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,10 +31,12 @@ public class EnumSerializationTest {
 
   protected DataObjectSerializationTestHelper m_testHelper;
   protected IDataObjectMapper m_dataObjectMapper;
+  protected IDataObjectMapper m_lenientDataObjectMapper;
 
   @Before
   public void before() {
     m_dataObjectMapper = BEANS.get(IPrettyPrintDataObjectMapper.class);
+    m_lenientDataObjectMapper = BEANS.get(ILenientDataObjectMapper.class);
     m_testHelper = BEANS.get(DataObjectSerializationTestHelper.class);
   }
 
@@ -66,7 +68,7 @@ public class EnumSerializationTest {
   @Test
   public void testSerializeDeserialize_EntityWithInvalidEnum() throws Exception {
     String json = m_testHelper.readResourceAsString(toURL("TestEntityWithInvalidEnumDo.json"));
-    assertThrows(AssertionException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithEnumDo.class));
+    assertThrows(PlatformException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithEnumDo.class));
   }
 
   @Test
@@ -87,6 +89,25 @@ public class EnumSerializationTest {
     TestEntityWithEnumMapKeyDo entity = BEANS.get(TestEntityWithEnumMapKeyDo.class);
     entity.withMap(Collections.singletonMap(null, "test"));
     m_dataObjectMapper.writeValue(entity);
+  }
+
+  @Test
+  public void testDeserializeInvalid() {
+    String json = "{\"_type\" : \"scout.TestEntityWithEnum\", \"value\" : \"unknown\"}";
+    assertThrows(PlatformException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithEnumDo.class));
+
+    TestEntityWithEnumDo marshalledLenient = m_lenientDataObjectMapper.readValue(json, TestEntityWithEnumDo.class);
+    assertThrows(ClassCastException.class, () -> marshalledLenient.getValue());
+    assertEquals("unknown", marshalledLenient.getString("value"));
+  }
+
+  @Test
+  public void testDeserializeInvalidMapKey() {
+    String json = "{\"_type\" : \"scout.TestEntityWithEnumMapKey\", \"map\" : { \"unknown\" : \"value\" } }";
+    assertThrows(PlatformException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithEnumMapKeyDo.class));
+
+    TestEntityWithEnumMapKeyDo marshalledLenient = m_lenientDataObjectMapper.readValue(json, TestEntityWithEnumMapKeyDo.class);
+    assertEquals("unknown", marshalledLenient.getString("map")); // FIXME sme [MR] how to keep map structure here
   }
 
   protected URL toURL(String resourceName) {

@@ -11,12 +11,15 @@ package org.eclipse.scout.rt.jackson.dataobject.id;
 
 import static org.eclipse.scout.rt.platform.util.Assertions.assertInstance;
 
+import java.io.IOException;
+
 import org.eclipse.scout.rt.dataobject.id.IId;
 import org.eclipse.scout.rt.dataobject.id.IdCodec;
 import org.eclipse.scout.rt.platform.util.LazyValue;
 
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.KeyDeserializer;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 /**
  * Custom deserializer for {@link IId} instances - like {@link TypedIdDeserializer} it uses {@link IdCodec} for
@@ -32,8 +35,13 @@ public class QualifiedIIdMapKeyDeserializer extends KeyDeserializer {
   }
 
   @Override
-  public Object deserializeKey(String key, DeserializationContext ctxt) {
+  public Object deserializeKey(String key, DeserializationContext ctxt) throws IOException {
     // check required to prevent returning an instance that isn't compatible with requested ID class
+    try {
     return assertInstance(m_idCodec.get().fromQualified(key), m_idClass);
+  }
+  catch (RuntimeException e) {
+    throw InvalidFormatException.from(null, "Failed to deserialize qualified IId map key: " + e.getMessage(), key, m_idClass);
+  }
   }
 }

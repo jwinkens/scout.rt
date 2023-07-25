@@ -17,6 +17,7 @@ import java.util.Collections;
 
 import org.eclipse.scout.rt.dataobject.DoEntityBuilder;
 import org.eclipse.scout.rt.dataobject.IDataObjectMapper;
+import org.eclipse.scout.rt.dataobject.ILenientDataObjectMapper;
 import org.eclipse.scout.rt.dataobject.IPrettyPrintDataObjectMapper;
 import org.eclipse.scout.rt.dataobject.fixture.FixtureCompositeId;
 import org.eclipse.scout.rt.dataobject.fixture.FixtureLongId;
@@ -27,7 +28,6 @@ import org.eclipse.scout.rt.jackson.dataobject.fixture.TestEntityWithIIdDo;
 import org.eclipse.scout.rt.jackson.testing.DataObjectSerializationTestHelper;
 import org.eclipse.scout.rt.platform.BEANS;
 import org.eclipse.scout.rt.platform.exception.PlatformException;
-import org.eclipse.scout.rt.platform.util.Assertions.AssertionException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,10 +45,12 @@ public class IIdSerializationTest {
 
   protected DataObjectSerializationTestHelper m_testHelper;
   protected IDataObjectMapper m_dataObjectMapper;
+  protected IDataObjectMapper m_lenientDataObjectMapper;
 
   @Before
   public void before() {
     m_dataObjectMapper = BEANS.get(IPrettyPrintDataObjectMapper.class);
+    m_lenientDataObjectMapper = BEANS.get(ILenientDataObjectMapper.class);
     m_testHelper = BEANS.get(DataObjectSerializationTestHelper.class);
   }
 
@@ -130,13 +132,53 @@ public class IIdSerializationTest {
         .put("iUuId", "scout.FixtureStringId:foo")
         .build());
 
-    assertThrows(AssertionException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithIIdDo.class));
+    assertThrows(PlatformException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithIIdDo.class));
 
     String mapJson = m_dataObjectMapper.writeValue(BEANS.get(DoEntityBuilder.class)
         .put("iUuIdMap", Collections.singletonMap("scout.FixtureStringId:foo", "test"))
         .build());
 
-    assertThrows(AssertionException.class, () -> m_dataObjectMapper.readValue(mapJson, TestEntityWithIIdDo.class));
+    assertThrows(PlatformException.class, () -> m_dataObjectMapper.readValue(mapJson, TestEntityWithIIdDo.class));
+  }
+
+  @Test
+  public void testDeserializeInvalidUnqualifiedId() {
+    String json = "{\"_type\" : \"scout.TestEntityWithIId\", \"uuId\" : \"a;b;c\" }"; // composite-id format for non-composite id
+    assertThrows(PlatformException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithIIdDo.class));
+
+    TestEntityWithIIdDo marshalledLenient = m_lenientDataObjectMapper.readValue(json, TestEntityWithIIdDo.class);
+    assertThrows(ClassCastException.class, () -> marshalledLenient.getUuId());
+    assertEquals("a;b;c", marshalledLenient.getString("uuId"));
+  }
+
+  @Test
+  public void testDeserializeInvalidUnqualifiedIdMapKey() {
+    String json = "{\"_type\" : \"scout.TestEntityWithIId\", \"map\" : { \"a;b;c\" : \"value\" } }"; // composite-id format for non-composite id
+    assertThrows(PlatformException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithIIdDo.class));
+
+    TestEntityWithIIdDo marshalledLenient = m_lenientDataObjectMapper.readValue(json, TestEntityWithIIdDo.class);
+    assertThrows(ClassCastException.class, () -> marshalledLenient.getMap());
+    assertEquals("a;b;c", marshalledLenient.getString("map")); // FIXME sme [MR] how to keep map structure here
+  }
+
+  @Test
+  public void testDeserializeInvalidQualifiedId() {
+    String json = "{\"_type\" : \"scout.TestEntityWithIId\", \"iid\" : \"scout.unknown:unknown\" }";
+    assertThrows(PlatformException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithIIdDo.class));
+
+    TestEntityWithIIdDo marshalledLenient = m_lenientDataObjectMapper.readValue(json, TestEntityWithIIdDo.class);
+    assertThrows(ClassCastException.class, () -> marshalledLenient.getIid());
+    assertEquals("scout.unknown:unknown", marshalledLenient.getString("iid"));
+  }
+
+  @Test
+  public void testDeserializeInvalidQualifiedIdMapKey() {
+    String json = "{\"_type\" : \"scout.TestEntityWithIId\", \"iUuId\" : { \"scout.unknown:unknown\" : \"value\" } }";
+    assertThrows(PlatformException.class, () -> m_dataObjectMapper.readValue(json, TestEntityWithIIdDo.class));
+
+    TestEntityWithIIdDo marshalledLenient = m_lenientDataObjectMapper.readValue(json, TestEntityWithIIdDo.class);
+    assertThrows(ClassCastException.class, () -> marshalledLenient.getIUuId());
+//    assertEquals("scout.unknown:unknown", marshalledLenient.getString("iUuId")); // FIXME sme [MR] how to keep map structure here/check structure of marshalledLenient
   }
 
   protected URL toURL(String resourceName) {

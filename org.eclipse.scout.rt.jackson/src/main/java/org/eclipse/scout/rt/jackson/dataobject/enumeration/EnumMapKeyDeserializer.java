@@ -17,6 +17,7 @@ import org.eclipse.scout.rt.platform.util.LazyValue;
 
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.KeyDeserializer;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 /**
  * Custom deserializer used for map keys of type {@link IEnum}.
@@ -32,6 +33,11 @@ public class EnumMapKeyDeserializer extends KeyDeserializer {
 
   @Override
   public Object deserializeKey(String key, DeserializationContext ctxt) throws IOException {
-    return m_enumResolver.get().resolve(m_enumClass, key);
+    try {
+      return m_enumResolver.get().resolve(m_enumClass, key);
+    }
+    catch (RuntimeException e) {
+      throw InvalidFormatException.from(null, "Failed to deserialize map key IEnum: " + e.getMessage(), key, m_enumClass);
+    }
   }
 }
